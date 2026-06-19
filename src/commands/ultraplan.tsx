@@ -43,9 +43,20 @@ function getUltraplanModel(): string {
 //
 // Bundler inlines .txt as a string; the test runner wraps it as {default}.
 /* eslint-disable @typescript-eslint/no-require-imports */
-const _rawPrompt = require('../utils/ultraplan/prompt.txt');
+// LEAK-FIX: prompt.txt is a build-time asset that the bundler inlines, but it is
+// NOT included in this source drop. In dev (bun run) the require() throws on the
+// missing file; because this module is pulled into REPL.js's import graph, that
+// throw crashes interactive startup during module evaluation and leaves the
+// terminal frozen (raw mode already set, no clean error path). Fall back to an
+// empty string — ultraplan is a non-core feature here.
+let _rawPrompt: unknown = '';
+try {
+  _rawPrompt = require('../utils/ultraplan/prompt.txt');
+} catch {
+  _rawPrompt = '';
+}
 /* eslint-enable @typescript-eslint/no-require-imports */
-const DEFAULT_INSTRUCTIONS: string = (typeof _rawPrompt === 'string' ? _rawPrompt : _rawPrompt.default).trimEnd();
+const DEFAULT_INSTRUCTIONS: string = (typeof _rawPrompt === 'string' ? _rawPrompt : (_rawPrompt as { default?: string }).default ?? '').trimEnd();
 
 // Dev-only prompt override resolved eagerly at module load.
 // Gated to ant builds (USER_TYPE is a build-time define,
