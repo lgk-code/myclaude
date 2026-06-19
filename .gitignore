@@ -8,3 +8,5 @@ package-lock.json
 .superpowers/
 *.log
 _probe_*
+# Vendored 3rd-party ripgrep binary (restored locally; not part of source)
+src/utils/vendor/ripgrep/

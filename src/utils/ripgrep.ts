@@ -1,5 +1,6 @@
 import type { ChildProcess, ExecFileException } from 'child_process'
 import { execFile, spawn } from 'child_process'
+import { existsSync } from 'fs'
 import memoize from 'lodash-es/memoize.js'
 import { homedir } from 'os'
 import * as path from 'path'
@@ -60,6 +61,15 @@ const getRipgrepConfig = memoize((): RipgrepConfig => {
     process.platform === 'win32'
       ? path.resolve(rgRoot, `${process.arch}-win32`, 'rg.exe')
       : path.resolve(rgRoot, `${process.arch}-${process.platform}`, 'rg')
+
+  // LEAK-FIX: the vendored ripgrep binary is not shipped in this build. If it is
+  // absent on disk, fall back to a system `rg` on PATH so Grep/search degrade
+  // gracefully instead of failing with ENOENT on a missing vendored path. The
+  // bare name 'rg' (not an absolute path) avoids PATH hijacking, matching the
+  // system-mode branch above.
+  if (!existsSync(command)) {
+    return { mode: 'system', command: 'rg', args: [] }
+  }
 
   return { mode: 'builtin', command, args: [] }
 })

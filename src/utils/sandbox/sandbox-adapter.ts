@@ -974,10 +974,19 @@ export const SandboxManager: ISandboxManager = {
   getLinuxSocksSocketPath: BaseSandboxManager.getLinuxSocksSocketPath,
   waitForNetworkInitialization: BaseSandboxManager.waitForNetworkInitialization,
   getSandboxViolationStore: BaseSandboxManager.getSandboxViolationStore,
+  // LEAK-FIX: @anthropic-ai/sandbox-runtime is a no-op stub here, so these
+  // BaseSandboxManager methods are undefined. BashTool calls both unconditionally
+  // (regardless of whether sandboxing is enabled), so guard them: with no sandbox
+  // there are no violations to annotate (return stderr unchanged) and no base
+  // cleanup to run (still scrub bare-git-repo files).
   annotateStderrWithSandboxFailures:
-    BaseSandboxManager.annotateStderrWithSandboxFailures,
+    typeof BaseSandboxManager.annotateStderrWithSandboxFailures === 'function'
+      ? BaseSandboxManager.annotateStderrWithSandboxFailures
+      : (_command: string, stderr: string): string => stderr,
   cleanupAfterCommand: (): void => {
-    BaseSandboxManager.cleanupAfterCommand()
+    if (typeof BaseSandboxManager.cleanupAfterCommand === 'function') {
+      BaseSandboxManager.cleanupAfterCommand()
+    }
     scrubBareGitRepoFiles()
   },
 }
