@@ -6,3 +6,5 @@ dist/
 bun.lockb
 package-lock.json
 .superpowers/
+*.log
+_probe_*

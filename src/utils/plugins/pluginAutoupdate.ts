@@ -226,6 +226,14 @@ async function updatePlugins(
  */
 export function autoUpdateMarketplacesAndPluginsInBackground(): void {
   void (async () => {
+    // LEAK-FIX: 切断启动期插件/市场自动更新(切断自更约束)。它对 ~/.claude 已安装的插件
+    // 逐个做 git 操作,会拖慢/挂住启动,并使 -p 进程因未结束的子进程无法退出。默认跳过;
+    // 设 CLAUDE_CODE_ENABLE_PLUGIN_AUTOUPDATE=1 可恢复原行为。
+    if (process.env.CLAUDE_CODE_ENABLE_PLUGIN_AUTOUPDATE !== '1') {
+      logForDebugging('Plugin autoupdate: skipped (LEAK-FIX local build)')
+      return
+    }
+
     if (shouldSkipPluginAutoupdate()) {
       logForDebugging('Plugin autoupdate: skipped (auto-updater disabled)')
       return
