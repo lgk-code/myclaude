@@ -1,0 +1,19 @@
+# Normalize line endings across platforms.
+# Text files are stored as LF in the repo and checked out as LF everywhere.
+* text=auto eol=lf
+
+# Binary files: never modify line endings.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.otf  binary
+*.lockb binary
