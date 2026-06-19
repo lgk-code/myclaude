@@ -449,6 +449,15 @@ async function detectWorktreeMainRepoPath(cwd: string): Promise<string | null> {
  * Returns { errors, warnings } - errors mean sandbox cannot run
  */
 const checkDependencies = memoize((): SandboxDependencyCheck => {
+  // LEAK-FIX: @anthropic-ai/sandbox-runtime is a no-op stub in this build and does
+  // not implement checkDependencies. Report unavailable (non-empty errors) so callers
+  // degrade gracefully instead of throwing on a missing static method.
+  if (typeof BaseSandboxManager.checkDependencies !== 'function') {
+    return {
+      errors: ['sandbox-runtime unavailable (stubbed build)'],
+      warnings: [],
+    } as SandboxDependencyCheck
+  }
   const { rgPath, rgArgs } = ripgrepCommand()
   return BaseSandboxManager.checkDependencies({
     command: rgPath,
@@ -489,6 +498,13 @@ function isSandboxRequired(): boolean {
  * Supports: macOS, Linux, and WSL2+ (WSL1 is not supported)
  */
 const isSupportedPlatform = memoize((): boolean => {
+  // LEAK-FIX: sandbox-runtime is a no-op stub here and does not implement
+  // isSupportedPlatform. Without this guard, isSandboxingEnabled() throws a
+  // TypeError during -p/REPL startup, runHeadless rejects, and the process hangs
+  // (open file watchers prevent exit). Treat platform as unsupported → sandbox skipped.
+  if (typeof BaseSandboxManager.isSupportedPlatform !== 'function') {
+    return false
+  }
   return BaseSandboxManager.isSupportedPlatform()
 })
 
